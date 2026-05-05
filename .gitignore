@@ -1,0 +1,19 @@
+# --- Rust 相關 ---
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# --- 開發環境與金鑰 (極重要！) ---
+.env
+*.token
+config.json
+/tokens/
+
+# --- 操作系統雜訊 ---
+.DS_Store
+Thumbs.db
+
+# --- IDE 相關 ---
+.vscode/
+.idea/
+*.iml

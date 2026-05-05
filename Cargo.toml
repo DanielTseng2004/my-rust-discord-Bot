@@ -1,0 +1,10 @@
+[package]
+name = "discord-game-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serenity = { version = "0.12", features = ["client", "gateway", "rustls_backend", "model", "builder", "http"] }
+tokio = { version = "1.0", features = ["full"] }
+rand = "0.8"
+dotenvy = "0.15.7"
