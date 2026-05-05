@@ -60,6 +60,7 @@ cargo run
 ├── src/
 │   ├── main.rs          # Bot 核心邏輯與指令註冊
 │   └── game.rs          # 遊戲邏輯 (Service 層)
+|   └── todo.rs          # 待辦清單邏輯 (Service 層)
 ├── .env                 # 環境變數 (已由 .gitignore 忽略)
 ├── .gitignore           # 排除 target/ 與敏感資訊
 └── Cargo.toml           # 專案依賴設定
