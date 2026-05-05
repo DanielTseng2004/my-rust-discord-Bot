@@ -19,14 +19,21 @@ impl TypeMapKey for TodoState {
     type Value = Arc<RwLock<todo::TodoList>>;
 }
 
+// 新增：註冊炸彈遊戲狀態
+struct BombState;
+impl TypeMapKey for BombState {
+    type Value = Arc<RwLock<game::NumberBomb>>;
+}
+
 struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("🤖 {} 猜拳大師準備就緒！", ready.user.name);
+        println!("🤖 {} 準備就緒！", ready.user.name);
 
         let commands = vec![
+            CreateCommand::new("game").description("猜拳對決"),
             CreateCommand::new("add")
                 .description("新增事項")
                 .add_option(
@@ -36,15 +43,18 @@ impl EventHandler for Handler {
                         "任務內容"
                     ).required(true)
                 ),
-            CreateCommand::new("complete")
-                .description("完成事項")
-                .add_option(
-                    CreateCommandOption::new(CommandOptionType::Integer, "id", "任務 ID").required(
-                        true
-                    )
-                ),
             CreateCommand::new("list").description("查看清單"),
-            CreateCommand::new("game").description("跟我來一場熱血的猜拳對決！")
+            // 新增：數字炸彈指令
+            CreateCommand::new("guess")
+                .description("猜一個數字，踩到炸彈就輸了！")
+                .add_option(
+                    CreateCommandOption::new(
+                        CommandOptionType::Integer,
+                        "number",
+                        "你猜的數字"
+                    ).required(true)
+                ),
+            CreateCommand::new("reset_bomb").description("重置炸彈範圍")
         ];
 
         let _ = Command::set_global_commands(&ctx.http, commands).await;
@@ -53,16 +63,43 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         match interaction {
             Interaction::Command(command) => {
-                let data_lock = {
-                    let data_read = ctx.data.read().await;
-                    data_read.get::<TodoState>().unwrap().clone()
-                };
+                let data = ctx.data.read().await;
 
                 match command.data.name.as_str() {
+                    "guess" => {
+                        let bomb_lock = data.get::<BombState>().unwrap().clone();
+                        let guess_val = command.data.options[0].value.as_i64().unwrap() as u32;
+
+                        let mut bomb = bomb_lock.write().await;
+                        let (msg, exploded) = bomb.guess(guess_val);
+
+                        if exploded {
+                            *bomb = game::NumberBomb::new();
+                        } // 炸了就自動重開
+
+                        let _ = command.create_response(
+                            &ctx.http,
+                            CreateInteractionResponse::Message(
+                                CreateInteractionResponseMessage::new().content(msg)
+                            )
+                        ).await;
+                    }
+                    "reset_bomb" => {
+                        let bomb_lock = data.get::<BombState>().unwrap().clone();
+                        *bomb_lock.write().await = game::NumberBomb::new();
+                        let _ = command.create_response(
+                            &ctx.http,
+                            CreateInteractionResponse::Message(
+                                CreateInteractionResponseMessage::new().content(
+                                    "💣 炸彈已重新放置！範圍回到 1 ~ 100"
+                                )
+                            )
+                        ).await;
+                    }
                     "game" => {
-                        let data = CreateInteractionResponse::Message(
+                        let resp = CreateInteractionResponse::Message(
                             CreateInteractionResponseMessage::new()
-                                .content("### 🖐️ 猜拳大賽開始！\n請選擇你要出的拳：")
+                                .content("### 🖐️ 猜拳大賽！")
                                 .button(
                                     CreateButton::new("btn_1")
                                         .label("✊ 石頭")
@@ -79,21 +116,12 @@ impl EventHandler for Handler {
                                         .style(ButtonStyle::Success)
                                 )
                         );
-                        let _ = command.create_response(&ctx.http, data).await;
+                        let _ = command.create_response(&ctx.http, resp).await;
                     }
                     "add" => {
+                        let todo_lock = data.get::<TodoState>().unwrap().clone();
                         let content = command.data.options[0].value.as_str().unwrap().to_string();
-                        let msg = data_lock.write().await.add_task(content);
-                        let _ = command.create_response(
-                            &ctx.http,
-                            CreateInteractionResponse::Message(
-                                CreateInteractionResponseMessage::new().content(msg)
-                            )
-                        ).await;
-                    }
-                    "complete" => {
-                        let id = command.data.options[0].value.as_i64().unwrap() as u32;
-                        let msg = data_lock.write().await.complete_task(id);
+                        let msg = todo_lock.write().await.add_task(content);
                         let _ = command.create_response(
                             &ctx.http,
                             CreateInteractionResponse::Message(
@@ -102,7 +130,8 @@ impl EventHandler for Handler {
                         ).await;
                     }
                     "list" => {
-                        let msg = data_lock.read().await.list_tasks();
+                        let todo_lock = data.get::<TodoState>().unwrap().clone();
+                        let msg = todo_lock.read().await.list_tasks();
                         let _ = command.create_response(
                             &ctx.http,
                             CreateInteractionResponse::Message(
@@ -113,30 +142,24 @@ impl EventHandler for Handler {
                     _ => {}
                 }
             }
-
             Interaction::Component(component) => {
                 let player_val = component.data.custom_id
                     .replace("btn_", "")
                     .parse::<u32>()
                     .unwrap_or(1);
                 let (result, bot_val, quote) = game::GuessGame::play(player_val);
-
-                let (title, color) = match result {
-                    game::GameResult::Win => ("🎉 你贏了！", "🌟"),
-                    game::GameResult::Lose => ("💀 你輸了...", "🌑"),
-                    game::GameResult::Draw => ("🤝 平手！", "⚔️"),
+                let title = match result {
+                    game::GameResult::Win => "🎉 你贏了！",
+                    game::GameResult::Lose => "💀 你輸了...",
+                    game::GameResult::Draw => "🤝 平手！",
                 };
-
                 let content = format!(
-                    "## {}\n{} 你出了 **{}**\n{} 機器人出了 **{}**\n\n> *「{}」*",
+                    "## {}\n你出 **{}** vs 機器人出 **{}**\n> *「{}」*",
                     title,
-                    color,
                     game::GuessGame::get_emoji(player_val),
-                    color,
                     game::GuessGame::get_emoji(bot_val),
                     quote
                 );
-
                 let _ = component.create_response(
                     &ctx.http,
                     CreateInteractionResponse::Message(
@@ -160,6 +183,7 @@ async fn main() {
     {
         let mut data = client.data.write().await;
         data.insert::<TodoState>(Arc::new(RwLock::new(todo::TodoList::new())));
+        data.insert::<BombState>(Arc::new(RwLock::new(game::NumberBomb::new()))); // 初始化炸彈狀態
     }
 
     let _ = client.start().await;
