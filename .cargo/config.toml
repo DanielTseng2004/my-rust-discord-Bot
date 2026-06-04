@@ -1,0 +1,11 @@
+# .cargo/config.toml
+# 讓 rust-analyzer 在分析整個 workspace 時預設啟用 "web" feature，
+# 使 dioxus 的型別對 IDE 可見，消除紅底線。
+# 實際編譯 bot 時不受影響（cargo run --bin bot 不會帶入 web feature）。
+
+[build]
+rustflags = []
+
+# rust-analyzer 讀取這個區段來決定要啟用哪些 features
+[cargo]
+features = ["web"]
