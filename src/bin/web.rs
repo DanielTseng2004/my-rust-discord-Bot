@@ -164,10 +164,10 @@ fn BlackjackGame() -> Element {
                     let p_score = BlackjackCore::get_score(&bj.read().player_cards);
                     let b_score = BlackjackCore::get_score(&bj.read().bot_cards);
                     let verdict = if p_score > 21 { "💥 你爆牌了！莊家獲勝！" }
-                                  else if b_score > 21 { "🎉 莊家爆牌了！你贏了！" }
-                                  else if p_score > b_score { "🏆 恭喜你，你贏了！" }
-                                  else if p_score < b_score { "❌ 可惜，你輸了..." }
-                                  else { "🤝 平手！" };
+                                else if b_score > 21 { "🎉 莊家爆牌了！你贏了！" }
+                                else if p_score > b_score { "🏆 恭喜你，你贏了！" }
+                                else if p_score < b_score { "❌ 可惜，你輸了..." }
+                                else { "🤝 平手！" };
                     rsx! {
                         h4 { style: "color: orange;", "{verdict}" }
                         button { onclick: move |_| bj.set(BlackjackCore::new()), "🔄 再玩一局" }
