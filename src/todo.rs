@@ -45,7 +45,8 @@ impl TodoList {
         if self.items.is_empty() {
             return "📋 清單是空的，放假囉！".into();
         }
-        let list = self.items
+        let list = self
+            .items
             .iter()
             .map(|item| {
                 let status = if item.completed { "[V]" } else { "[ ]" };

@@ -18,10 +18,9 @@ impl GuessGame {
         let bot_choice = rng.gen_range(1..=3);
         let result = if player_choice == bot_choice {
             GameResult::Draw
-        } else if
-            (player_choice == 1 && bot_choice == 2) ||
-            (player_choice == 2 && bot_choice == 3) ||
-            (player_choice == 3 && bot_choice == 1)
+        } else if (player_choice == 1 && bot_choice == 2)
+            || (player_choice == 2 && bot_choice == 3)
+            || (player_choice == 3 && bot_choice == 1)
         {
             GameResult::Win
         } else {
@@ -117,7 +116,11 @@ impl Card {
     }
 
     pub fn suit_color(&self) -> &'static str {
-        if self.suit == 1 || self.suit == 2 { "#e74c3c" } else { "#2c3e50" }
+        if self.suit == 1 || self.suit == 2 {
+            "#e74c3c"
+        } else {
+            "#2c3e50"
+        }
     }
 
     /// 取得黑傑克中的點數
@@ -150,14 +153,8 @@ impl BlackjackCore {
     }
 
     pub fn get_score(cards: &[Card]) -> u32 {
-        let mut score = cards
-            .iter()
-            .map(|c| c.bj_value())
-            .sum::<u32>();
-        let mut ace_count = cards
-            .iter()
-            .filter(|c| c.value == 1)
-            .count();
+        let mut score = cards.iter().map(|c| c.bj_value()).sum::<u32>();
+        let mut ace_count = cards.iter().filter(|c| c.value == 1).count();
 
         // 如果爆牌且手上有 A (11點)，則將 A 視為 1 點
         while score > 21 && ace_count > 0 {
@@ -259,7 +256,10 @@ impl Roulette {
         let mut rng = rand::thread_rng();
         let mut chamber = [false; 6];
         chamber[rng.gen_range(0..6)] = true;
-        Self { chamber, current_pos: 0 }
+        Self {
+            chamber,
+            current_pos: 0,
+        }
     }
     pub fn pull_trigger(&mut self) -> bool {
         let is_bullet = self.chamber[self.current_pos];
@@ -295,7 +295,7 @@ impl PokerRank {
             PokerRank::Straight => "順子",
             PokerRank::Flush => "同花",
             PokerRank::FullHouse => "葫蘆",
-            PokerRank::FourOfAKind => "四條",
+            PokerRank::FourOfAKind => "鐵支",
             PokerRank::StraightFlush => "同花順",
             PokerRank::RoyalFlush => "皇家同花順",
         }
@@ -416,10 +416,7 @@ impl TexasHoldem {
         let mut best_rank = PokerRank::HighCard;
         let mut best_cards = all[0..5].to_vec();
         for idx in &combos {
-            let hand: Vec<Card> = idx
-                .iter()
-                .map(|&i| all[i])
-                .collect();
+            let hand: Vec<Card> = idx.iter().map(|&i| all[i]).collect();
             let rank = Self::evaluate_five(&hand);
             if rank > best_rank {
                 best_rank = rank;
@@ -430,15 +427,9 @@ impl TexasHoldem {
     }
 
     pub fn evaluate_five(cards: &[Card]) -> PokerRank {
-        let mut values: Vec<u8> = cards
-            .iter()
-            .map(|c| c.value)
-            .collect();
+        let mut values: Vec<u8> = cards.iter().map(|c| c.value).collect();
         values.sort_unstable();
-        let suits: Vec<u8> = cards
-            .iter()
-            .map(|c| c.suit)
-            .collect();
+        let suits: Vec<u8> = cards.iter().map(|c| c.suit).collect();
         let is_flush = suits.iter().all(|&s| s == suits[0]);
         let is_straight = {
             let normal = values.windows(2).all(|w| w[1] == w[0] + 1);
@@ -450,11 +441,7 @@ impl TexasHoldem {
         for &v in &values {
             counts[v as usize] += 1;
         }
-        let mut freqs: Vec<u8> = counts
-            .iter()
-            .filter(|&&c| c > 0)
-            .cloned()
-            .collect();
+        let mut freqs: Vec<u8> = counts.iter().filter(|&&c| c > 0).cloned().collect();
         freqs.sort_unstable_by(|a, b| b.cmp(a));
 
         match (is_flush, is_straight, freqs.as_slice()) {
@@ -509,7 +496,11 @@ pub struct TicTacToe {
 
 impl TicTacToe {
     pub fn new() -> Self {
-        Self { board: [0; 9], game_over: false, winner: 0 }
+        Self {
+            board: [0; 9],
+            game_over: false,
+            winner: 0,
+        }
     }
 
     // 🌟 新增功能：渲染 Discord 終端文字版棋盤 (支援 bot.rs 第 364 與 378 行)
@@ -572,7 +563,11 @@ impl TicTacToe {
                 board[i] = if is_ai { 2 } else { 1 };
                 let score = Self::minimax(board, !is_ai);
                 board[i] = 0;
-                best = if is_ai { best.max(score) } else { best.min(score) };
+                best = if is_ai {
+                    best.max(score)
+                } else {
+                    best.min(score)
+                };
             }
         }
         best
@@ -637,122 +632,21 @@ pub struct WordleGame {
 
 const WORDLE_WORDS: &[&str] = &[
     // --- 你原本的清單 ---
-    "CRANE",
-    "SLATE",
-    "TRACE",
-    "AUDIO",
-    "RAISE",
-    "STARE",
-    "ARISE",
-    "SNARE",
-    "LEAST",
-    "IRATE",
-    "CRATE",
-    "TRAIN",
-    "TRAIL",
-    "REALM",
-    "PEARL",
-    "FLAME",
-    "BLEND",
-    "CRISP",
-    "DWARF",
-    "EXPEL",
-    "FROST",
-    "GRILL",
-    "HARSH",
-    "INKED",
-    "JOUST",
-    "KNEEL",
-    "LEMON",
-    "MOIST",
-    "NOBLE",
-    "OLIVE",
-    "PLUME",
-    "QUEST",
-    "RISKY",
-    "SCORN",
-    "TIGER",
-    "UNITY",
-    "VENOM",
-    "WRING",
-    "YACHT",
-    "ZONAL",
-
+    "CRANE", "SLATE", "TRACE", "AUDIO", "RAISE", "STARE", "ARISE", "SNARE", "LEAST", "IRATE",
+    "CRATE", "TRAIN", "TRAIL", "REALM", "PEARL", "FLAME", "BLEND", "CRISP", "DWARF", "EXPEL",
+    "FROST", "GRILL", "HARSH", "INKED", "JOUST", "KNEEL", "LEMON", "MOIST", "NOBLE", "OLIVE",
+    "PLUME", "QUEST", "RISKY", "SCORN", "TIGER", "UNITY", "VENOM", "WRING", "YACHT", "ZONAL",
     // --- 新增：強力開局字與高頻母音字 ---
-    "ADIEU",
-    "ROAST",
-    "CLONE",
-    "SHARE",
-    "TEARS",
-    "RELAX",
-    "ALIEN",
-    "GUIDE",
-    "HOUSE",
-    "PLANT",
-    "HEART",
-    "SMART",
-    "STORE",
-    "ALIVE",
-    "BLAST",
-
+    "ADIEU", "ROAST", "CLONE", "SHARE", "TEARS", "RELAX", "ALIEN", "GUIDE", "HOUSE", "PLANT",
+    "HEART", "SMART", "STORE", "ALIVE", "BLAST",
     // --- 新增：常見常用字（補強不同子音開頭） ---
-    "BEACH",
-    "BRICK",
-    "CHAIR",
-    "CHIEF",
-    "CLOCK",
-    "CROWD",
-    "DRIVE",
-    "DREAM",
-    "FAINT",
-    "FLUTE",
-    "FRONT",
-    "GHOST",
-    "GRAPH",
-    "GRAPE",
-    "GREEN",
-    "HEAVY",
-    "LIGHT",
-    "MATCH",
-    "NIGHT",
-    "OCEAN",
-    "PILOT",
-    "PRIDE",
-    "SHARK",
-    "SHIRT",
-    "SMILE",
-    "SNAKE",
-    "SPARK",
-    "SPOON",
-    "STAGE",
-    "STORM",
-    "SWEET",
-    "THINK",
-    "THROW",
-    "TOWEL",
-    "TRUCK",
-    "VOICE",
-    "WATCH",
-    "WATER",
-    "WHEAT",
-    "WORLD",
-
+    "BEACH", "BRICK", "CHAIR", "CHIEF", "CLOCK", "CROWD", "DRIVE", "DREAM", "FAINT", "FLUTE",
+    "FRONT", "GHOST", "GRAPH", "GRAPE", "GREEN", "HEAVY", "LIGHT", "MATCH", "NIGHT", "OCEAN",
+    "PILOT", "PRIDE", "SHARK", "SHIRT", "SMILE", "SNAKE", "SPARK", "SPOON", "STAGE", "STORM",
+    "SWEET", "THINK", "THROW", "TOWEL", "TRUCK", "VOICE", "WATCH", "WATER", "WHEAT", "WORLD",
     // --- 新增：趣味與特殊字母組合 ---
-    "BLIMP",
-    "CLERK",
-    "FLICK",
-    "FLOCK",
-    "GLOVE",
-    "JUICY",
-    "LUNCH",
-    "MANGO",
-    "PIZZA",
-    "PROUD",
-    "SHAVE",
-    "SKATE",
-    "TRASH",
-    "VAPOR",
-    "WHALE",
+    "BLIMP", "CLERK", "FLICK", "FLOCK", "GLOVE", "JUICY", "LUNCH", "MANGO", "PIZZA", "PROUD",
+    "SHAVE", "SKATE", "TRASH", "VAPOR", "WHALE",
 ];
 
 impl WordleGame {
@@ -772,12 +666,10 @@ impl WordleGame {
     pub fn hints_to_emoji(hints: &[LetterHint]) -> String {
         hints
             .iter()
-            .map(|h| {
-                match h {
-                    LetterHint::Correct => "🟩",
-                    LetterHint::Present => "🟨",
-                    LetterHint::Absent => "⬛",
-                }
+            .map(|h| match h {
+                LetterHint::Correct => "🟩",
+                LetterHint::Present => "🟨",
+                LetterHint::Absent => "⬛",
             })
             .collect()
     }
@@ -829,5 +721,46 @@ impl WordleGame {
 
     pub fn is_over(&self) -> bool {
         self.solved || self.guesses.len() >= (self.max_guesses as usize)
+    }
+    // 🌟 新增功能：渲染出像網頁遊戲一樣的封閉式精美終端盤面
+    pub fn render_board_text(&self) -> String {
+        let mut board = String::new();
+        board.push_str("```yaml\n");
+        board.push_str("┌─────────────────────────────┐\n");
+        board.push_str("│       WORDLE GAME ZONE      │\n");
+        board.push_str("├─────────────────────────────┤\n");
+
+        // 顯示已經猜過的每一行
+        for i in 0..self.max_guesses as usize {
+            if i < self.guesses.len() {
+                let word = &self.guesses[i];
+                let hint = &self.hints[i];
+                let mut emoji_line = String::new();
+                for h in hint {
+                    match h {
+                        LetterHint::Correct => emoji_line.push_str("🟩"),
+                        LetterHint::Present => emoji_line.push_str("🟨"),
+                        LetterHint::Absent => emoji_line.push_str("⬛"),
+                    }
+                }
+                // 格式化排列
+                board.push_str(&format!(
+                    "│  TRY {}:  {}   [ {} ]  │\n",
+                    i + 1,
+                    word,
+                    emoji_line
+                ));
+            } else {
+                // 尚未猜測的空白行
+                board.push_str(&format!(
+                    "│  TRY {}:  _ _ _ _ _   [ ⬜⬜⬜⬜⬜ ]  │\n",
+                    i + 1
+                ));
+            }
+        }
+
+        board.push_str("└─────────────────────────────┘\n");
+        board.push_str("```");
+        board
     }
 }
